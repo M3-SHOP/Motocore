@@ -32,6 +32,7 @@ $tituloPagina = $tituloPagina ?? 'MotoCore';
         <nav class="navegacao">
             <?php if (autenticado()): ?>
                 <a href="conversas.php">Mensagens</a>
+                <a href="minha_conta.php">Os meus anúncios</a>
                 <a href="publicar.php" class="botao-publicar">
                     + Publicar anúncio
                 </a>
