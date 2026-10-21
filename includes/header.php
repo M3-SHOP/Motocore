@@ -31,10 +31,12 @@ $tituloPagina = $tituloPagina ?? 'MotoCore';
 
         <nav class="navegacao">
             <?php if (autenticado()): ?>
+                <a href="conversas.php">Mensagens</a>
                 <a href="publicar.php" class="botao-publicar">
                     + Publicar anúncio
                 </a>
                 <a href="minha_conta.php">A minha conta</a>
+                
                 <form action="logout.php" method="post" class="logout-form">
     <input type="hidden" name="csrf_token"
            value="<?= e(tokenCsrf()) ?>">

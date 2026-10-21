@@ -471,8 +471,515 @@ button,
     }
 }
 
+
 @media (max-width: 380px) {
     .grelha-anuncios {
         grid-template-columns: 1fr;
+    }
+}
+
+
+.publicar-container {
+    max-width: 760px;
+}
+
+.publicar-container .formulario textarea {
+    width: 100%;
+    min-height: 150px;
+    resize: vertical;
+    padding: 12px;
+    color: var(--texto);
+    background: #0b0f14;
+    border: 1px solid var(--borda);
+    border-radius: 7px;
+    font: inherit;
+}
+
+.campo-duplo {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+
+.campo-duplo > div {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.opcao-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+}
+
+.opcao-checkbox input {
+    width: 18px;
+    min-height: 18px;
+    accent-color: var(--cor-principal);
+}
+
+.texto-ajuda {
+    color: var(--texto-secundario);
+    font-size: 13px;
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 500px) {
+    .campo-duplo {
+        grid-template-columns: 1fr;
+    }
+}
+
+.detalhe-mota {
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+.caminho {
+    margin-bottom: 22px;
+    color: var(--texto-secundario);
+    font-size: 13px;
+}
+
+.caminho a {
+    color: var(--cor-principal);
+}
+
+.detalhe-grelha {
+    display: grid;
+    grid-template-columns: minmax(0, 1.7fr) minmax(280px, 0.9fr);
+    align-items: start;
+    gap: 24px;
+}
+
+.detalhe-conteudo,
+.detalhe-lateral {
+    min-width: 0;
+}
+
+.galeria-principal {
+    height: 430px;
+    background: #151b23;
+    border: 1px solid var(--borda);
+    border-radius: var(--raio);
+    overflow: hidden;
+}
+
+.galeria-principal > img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: contain;
+}
+
+.imagem-indisponivel {
+    height: 100%;
+    display: grid;
+    place-items: center;
+    color: var(--texto-secundario);
+}
+
+.miniaturas {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+}
+
+.miniatura {
+    flex: 0 0 90px;
+    height: 72px;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid var(--borda);
+    border-radius: 8px;
+    background: #151b23;
+    cursor: pointer;
+}
+
+.miniatura:hover,
+.miniatura:focus-visible {
+    border-color: var(--cor-principal);
+}
+
+.miniatura img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.detalhe-descricao,
+.caixa-preco,
+.caixa-vendedor {
+    padding: 22px;
+    margin-top: 20px;
+    background: #151b23;
+    border: 1px solid var(--borda);
+    border-radius: var(--raio);
+}
+
+.detalhe-descricao h2,
+.caixa-vendedor h2 {
+    font-size: 19px;
+    margin: 0 0 18px;
+}
+
+.descricao-texto {
+    color: #cbd5e1;
+    overflow-wrap: anywhere;
+}
+
+.caracteristicas {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.caracteristicas div {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.caracteristicas span,
+.localizacao-detalhe,
+.data-anuncio {
+    color: var(--texto-secundario);
+    font-size: 13px;
+}
+
+.caracteristicas strong {
+    overflow-wrap: anywhere;
+}
+
+.caixa-preco {
+    margin-top: 0;
+    position: sticky;
+    top: 100px;
+}
+
+.preco-grande {
+    color: #60aaff;
+    font-size: 32px;
+    font-weight: 800;
+    margin: 0 0 8px;
+}
+
+.preco-negociavel {
+    display: inline-block;
+    margin-bottom: 12px;
+    color: #93c5fd;
+    background: #172d48;
+    border-radius: 5px;
+    padding: 4px 8px;
+    font-size: 12px;
+}
+
+.caixa-preco h1 {
+    font-size: 21px;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+.largura-total {
+    width: 100%;
+}
+
+.caixa-vendedor {
+    margin-top: 18px;
+}
+
+.vendedor-nome {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.avatar-vendedor {
+    width: 45px;
+    height: 45px;
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    background: #172d48;
+    color: #60aaff;
+    border-radius: 50%;
+    font-size: 20px;
+    font-weight: 800;
+}
+
+.vendedor-nome p {
+    color: var(--texto-secundario);
+    font-size: 13px;
+    margin: 4px 0 0;
+}
+
+@media (max-width: 800px) {
+    .detalhe-grelha {
+        grid-template-columns: 1fr;
+    }
+
+    .galeria-principal {
+        height: min(65vw, 400px);
+    }
+
+    .caixa-preco {
+        position: static;
+    }
+}
+
+@media (max-width: 450px) {
+    .detalhe-descricao,
+    .caixa-preco,
+    .caixa-vendedor {
+        padding: 16px;
+    }
+
+    .caracteristicas {
+        gap: 14px 10px;
+    }
+
+    .preco-grande {
+        font-size: 28px;
+    }
+}
+
+.mensagens-pagina {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.mensagens-pagina > h1 {
+    font-size: 28px;
+    margin-bottom: 6px;
+}
+
+.texto-secundario {
+    color: var(--texto-secundario);
+}
+
+.lista-conversas {
+    margin-top: 24px;
+    background: #151b23;
+    border: 1px solid var(--borda);
+    border-radius: var(--raio);
+    overflow: hidden;
+}
+
+.item-conversa {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px;
+    border-bottom: 1px solid var(--borda);
+    transition: background .2s;
+}
+
+.item-conversa:last-child {
+    border-bottom: 0;
+}
+
+.item-conversa:hover {
+    background: #1b2635;
+}
+
+.conversa-avatar {
+    width: 46px;
+    height: 46px;
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: #172d48;
+    color: #60aaff;
+    font-size: 20px;
+    font-weight: 800;
+}
+
+.conversa-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.conversa-info strong,
+.conversa-info span,
+.conversa-info p {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.conversa-info span {
+    margin-top: 3px;
+    color: var(--texto);
+    font-size: 13px;
+}
+
+.conversa-info p {
+    margin: 5px 0 0;
+    color: var(--texto-secundario);
+    font-size: 13px;
+}
+
+.conversa-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    color: var(--texto-secundario);
+    font-size: 12px;
+}
+
+.contador-nao-lidas {
+    display: grid;
+    place-items: center;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 6px;
+    background: var(--cor-principal);
+    color: white;
+    border-radius: 50px;
+    font-weight: 700;
+}
+
+.voltar-mensagens {
+    display: inline-block;
+    margin-bottom: 20px;
+    color: #60aaff;
+}
+
+.cabecalho-conversa {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 20px;
+    background: #151b23;
+    border: 1px solid var(--borda);
+    border-radius: var(--raio) var(--raio) 0 0;
+}
+
+.cabecalho-conversa h1 {
+    margin: 0;
+    font-size: 21px;
+}
+
+.cabecalho-conversa p {
+    color: var(--texto-secundario);
+    margin-bottom: 0;
+}
+
+.preco-conversa {
+    color: #60aaff;
+    white-space: nowrap;
+}
+
+.caixa-mensagens {
+    height: 420px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 20px;
+    background: #0e131a;
+    border: 1px solid var(--borda);
+    border-top: 0;
+}
+
+.mensagem {
+    max-width: 80%;
+    padding: 12px 15px;
+    border: 1px solid var(--borda);
+    border-radius: 12px;
+    overflow-wrap: anywhere;
+}
+
+.mensagem p {
+    margin: 5px 0 8px;
+    white-space: normal;
+}
+
+.mensagem time {
+    display: block;
+    font-size: 11px;
+    color: var(--texto-secundario);
+    text-align: right;
+}
+
+.mensagem-minha {
+    align-self: flex-end;
+    background: #12335a;
+    border-color: #20518a;
+}
+
+.mensagem-outra {
+    align-self: flex-start;
+    background: #1a212b;
+}
+
+.sem-mensagens {
+    margin: auto;
+    color: var(--texto-secundario);
+    text-align: center;
+}
+
+.formulario-mensagem {
+    padding: 20px;
+    background: #151b23;
+    border: 1px solid var(--borda);
+    border-top: 0;
+    border-radius: 0 0 var(--raio) var(--raio);
+}
+
+.formulario-mensagem textarea {
+    width: 100%;
+    padding: 12px;
+    resize: vertical;
+    color: var(--texto);
+    background: #0b0f14;
+    border: 1px solid var(--borda);
+    border-radius: 8px;
+    font: inherit;
+}
+
+.formulario-mensagem textarea:focus {
+    outline: none;
+    border-color: var(--cor-principal);
+}
+
+@media (max-width: 600px) {
+    .item-conversa {
+        padding: 13px 10px;
+        gap: 10px;
+    }
+
+    .conversa-avatar {
+        width: 38px;
+        height: 38px;
+    }
+
+    .cabecalho-conversa {
+        padding: 14px;
+    }
+
+    .cabecalho-conversa h1 {
+        font-size: 17px;
+    }
+
+    .preco-conversa {
+        font-size: 14px;
+    }
+
+    .caixa-mensagens {
+        height: 55vh;
+        padding: 12px;
+    }
+
+    .mensagem {
+        max-width: 92%;
     }
 }
