@@ -197,13 +197,14 @@ require __DIR__ . '/includes/header.php';
                         Inicia sessão para contactar
                     </a>
 
-                <?php elseif ($eDono): ?>
-                    <a class="botao principal largura-total"
-                       href="minha_conta.php">
-                        Gerir o meu anúncio
-                    </a>
 
-                <?php else: ?>
+<?php elseif ($eDono): ?>
+    <a class="botao principal largura-total"
+       href="editar_anuncio.php?id=<?= (int) $anuncio['id'] ?>">
+        Editar anúncio
+    </a>
+<?php else: ?>
+
                     <form action="iniciar_conversa.php" method="post">
                         <input type="hidden" name="csrf_token"
                                value="<?= e(tokenCsrf()) ?>">
