@@ -269,57 +269,61 @@ require __DIR__ . '/includes/header.php';
                             <?php endif; ?>
                         </p>
 
-                        <div class="meu-anuncio-acoes">
+                        
+<div class="meu-anuncio-acoes">
 
-                            <a class="botao secundario"
-                               href="anuncio.php?id=<?= (int) $a['id'] ?>">
-                                Ver anúncio
-                            </a>
+    <a class="botao secundario"
+       href="anuncio.php?id=<?= (int) $a['id'] ?>">
+        Ver anúncio
+    </a>
 
-                            <?php if ($a['estado_anuncio'] === 'ativo'): ?>
-                                <form method="post" action="minha_conta.php">
-                                    <input type="hidden" name="csrf_token"
-                                           value="<?= e(tokenCsrf()) ?>">
-                                    <input type="hidden" name="anuncio_id"
-                                           value="<?= (int) $a['id'] ?>">
-                                    <input type="hidden" name="acao"
-                                           value="vendido">
+    <a class="botao secundario"
+       href="editar_anuncio.php?id=<?= (int) $a['id'] ?>">
+        Editar anúncio
+    </a>
 
-                                    <button class="botao vendido" type="submit">
-                                        Marcar vendido
-                                    </button>
-                                </form>
-                            <?php elseif ($a['estado_anuncio'] === 'vendido'): ?>
-                                <form method="post" action="minha_conta.php">
-                                    <input type="hidden" name="csrf_token"
-                                           value="<?= e(tokenCsrf()) ?>">
-                                    <input type="hidden" name="anuncio_id"
-                                           value="<?= (int) $a['id'] ?>">
-                                    <input type="hidden" name="acao"
-                                           value="reativar">
+    <?php if ($a['estado_anuncio'] === 'ativo'): ?>
+        <form method="post" action="minha_conta.php">
+            <input type="hidden" name="csrf_token"
+                   value="<?= e(tokenCsrf()) ?>">
+            <input type="hidden" name="anuncio_id"
+                   value="<?= (int) $a['id'] ?>">
+            <input type="hidden" name="acao" value="vendido">
 
-                                    <button class="botao secundario" type="submit">
-                                        Reativar anúncio
-                                    </button>
-                                </form>
-                            <?php endif; ?>
+            <button class="botao vendido" type="submit">
+                Marcar vendido
+            </button>
+        </form>
+    <?php elseif ($a['estado_anuncio'] === 'vendido'): ?>
+        <form method="post" action="minha_conta.php">
+            <input type="hidden" name="csrf_token"
+                   value="<?= e(tokenCsrf()) ?>">
+            <input type="hidden" name="anuncio_id"
+                   value="<?= (int) $a['id'] ?>">
+            <input type="hidden" name="acao" value="reativar">
 
-                            <form method="post" action="minha_conta.php"
-                                  onsubmit="return confirm('Tens a certeza de que queres eliminar este anúncio e as respetivas conversas? Esta ação não pode ser desfeita.');">
+            <button class="botao secundario" type="submit">
+                Reativar anúncio
+            </button>
+        </form>
+    <?php endif; ?>
 
-                                <input type="hidden" name="csrf_token"
-                                       value="<?= e(tokenCsrf()) ?>">
-                                <input type="hidden" name="anuncio_id"
-                                       value="<?= (int) $a['id'] ?>">
-                                <input type="hidden" name="acao"
-                                       value="eliminar">
+    <form method="post" action="minha_conta.php"
+          onsubmit="return confirm('Tens a certeza de que queres eliminar este anúncio e as respetivas conversas? Esta ação não pode ser desfeita.');">
 
-                                <button class="botao eliminar" type="submit">
-                                    Eliminar
-                                </button>
-                            </form>
+        <input type="hidden" name="csrf_token"
+               value="<?= e(tokenCsrf()) ?>">
+        <input type="hidden" name="anuncio_id"
+               value="<?= (int) $a['id'] ?>">
+        <input type="hidden" name="acao" value="eliminar">
 
-                        </div>
+        <button class="botao eliminar" type="submit">
+            Eliminar
+        </button>
+    </form>
+
+</div>
+
                     </div>
                 </article>
 
