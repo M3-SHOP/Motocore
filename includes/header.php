@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/funcoes.php';
 
-$tituloPagina = $tituloPagina ?? 'MotoMarket';
+$tituloPagina = $tituloPagina ?? 'MotoCore';
 ?>
 <!DOCTYPE html>
 <html lang="pt-PT">
@@ -9,15 +9,15 @@ $tituloPagina = $tituloPagina ?? 'MotoMarket';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description"
-          content="Compra e vende motas em Portugal no MotoMarket.">
-    <title><?= e($tituloPagina) ?> | MotoMarket</title>
+          content="Compra e vende motas em Portugal no MotoCore.">
+    <title><?= e($tituloPagina) ?> | MotoCore</title>
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
 
 <header class="topo">
     <div class="container barra">
-        <a class="logo" href="index.php">Moto<span>Market</span></a>
+        <a class="logo" href="index.php">Moto<span>Core</span></a>
 
         <form class="pesquisa-topo" action="index.php" method="get">
             <input

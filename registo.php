@@ -81,7 +81,7 @@ require __DIR__ . '/includes/header.php';
 
 <section class="formulario-container">
     <h1>Criar conta</h1>
-    <p>Junta-te à comunidade MotoMarket.</p>
+    <p>Junta-te à comunidade MotoCore.</p>
 
     <?php if ($erro !== ''): ?>
         <div class="alerta erro"><?= e($erro) ?></div>

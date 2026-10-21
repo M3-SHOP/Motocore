@@ -2,7 +2,7 @@
 
 <footer class="rodape">
     <div class="container">
-        <p>&copy; <?= date('Y') ?> MotoMarket — O teu marketplace de motas.</p>
+        <p>&copy; <?= date('Y') ?> MotoCore — O teu marketplace de motas.</p>
     </div>
 </footer>
 
