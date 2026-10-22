@@ -9,7 +9,7 @@ if (!autenticado()) {
 $erro = '';
 $marcas = [
     'Aprilia', 'BMW', 'Ducati', 'Honda', 'Kawasaki',
-    'KTM', 'Suzuki', 'Triumph', 'Yamaha', 'Outra'
+    'KTM', 'Suzuki', 'Triumph', '-', 'Outra'
 ];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
