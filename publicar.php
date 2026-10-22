@@ -6,6 +6,49 @@ if (!autenticado()) {
     redirecionar('login.php');
 }
 
+$stmtConta = $pdo->prepare(
+    'SELECT tipo_conta, stand_aprovado
+     FROM utilizadores
+     WHERE id = ?
+     LIMIT 1'
+);
+$stmtConta->execute([$_SESSION['utilizador_id']]);
+$contaPublicacao = $stmtConta->fetch(PDO::FETCH_ASSOC);
+
+if (!$contaPublicacao) {
+    http_response_code(403);
+    exit('Não foi possível validar a tua conta.');
+}
+
+if (
+    $contaPublicacao['tipo_conta'] === 'stand' &&
+    (int) $contaPublicacao['stand_aprovado'] !== 1
+) {
+    $tituloPagina = 'Validação do stand';
+    require __DIR__ . '/includes/header.php';
+    ?>
+    <main class="formulario-container publicar-container">
+        <div class="publicar-pendente">
+            <div class="publicar-pendente-icone">⌛</div>
+            <h1>Estamos a validar o teu stand</h1>
+            <p>
+                A tua conta empresarial foi criada com sucesso.
+                Antes de publicares motas, precisamos de validar
+                os dados do teu stand.
+            </p>
+            <p>
+                Entretanto, podes continuar a explorar a Motocore.
+            </p>
+            <a class="botao principal" href="index.php">
+                Voltar à página inicial
+            </a>
+        </div>
+    </main>
+    <?php
+    require __DIR__ . '/includes/footer.php';
+    exit;
+}
+
 $erro = '';
 $marcas = [
     'Aprilia', 'BMW', 'Ducati', 'Honda', 'Kawasaki',
