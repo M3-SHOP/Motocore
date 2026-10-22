@@ -1,5 +1,7 @@
-
 <?php
+
+declare(strict_types=1);
+
 require_once __DIR__ . '/includes/funcoes.php';
 
 if (autenticado()) {
@@ -15,12 +17,36 @@ $nomeStand = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     validarCsrf();
 
-    $nome = trim($_POST['nome'] ?? '');
-    $email = strtolower(trim($_POST['email'] ?? ''));
-    $tipoConta = $_POST['tipo_conta'] ?? 'particular';
-    $nomeStand = trim($_POST['nome_stand'] ?? '');
-    $password = $_POST['password'] ?? '';
-    $confirmacao = $_POST['confirmar_password'] ?? '';
+    $nomeRecebido = $_POST['nome'] ?? '';
+    $emailRecebido = $_POST['email'] ?? '';
+    $tipoRecebido = $_POST['tipo_conta'] ?? 'particular';
+    $standRecebido = $_POST['nome_stand'] ?? '';
+    $passwordRecebida = $_POST['password'] ?? '';
+    $confirmacaoRecebida = $_POST['confirmar_password'] ?? '';
+
+    $nome = is_string($nomeRecebido)
+        ? trim($nomeRecebido)
+        : '';
+
+    $email = is_string($emailRecebido)
+        ? strtolower(trim($emailRecebido))
+        : '';
+
+    $tipoConta = is_string($tipoRecebido)
+        ? $tipoRecebido
+        : '';
+
+    $nomeStand = is_string($standRecebido)
+        ? trim($standRecebido)
+        : '';
+
+    $password = is_string($passwordRecebida)
+        ? $passwordRecebida
+        : '';
+
+    $confirmacao = is_string($confirmacaoRecebida)
+        ? $confirmacaoRecebida
+        : '';
 
     if (
         $nome === '' ||
@@ -29,36 +55,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         strlen($email) > 190
     ) {
         $erro = 'Preenche corretamente o nome e o email.';
-    } elseif (!in_array($tipoConta, ['particular', 'stand'], true)) {
+
+    } elseif (
+        !in_array($tipoConta, ['particular', 'stand'], true)
+    ) {
         $erro = 'Seleciona um tipo de conta válido.';
+
     } elseif (
         $tipoConta === 'stand' &&
         ($nomeStand === '' || mb_strlen($nomeStand) > 150)
     ) {
         $erro = 'Indica um nome de stand válido.';
+
     } elseif (strlen($password) < 10) {
         $erro = 'A palavra-passe deve ter pelo menos 10 caracteres.';
+
     } elseif ($password !== $confirmacao) {
         $erro = 'As palavras-passe não coincidem.';
-    } else {
-        $stmt = $pdo->prepare(
-            'SELECT id FROM utilizadores WHERE email = ? LIMIT 1'
-        );
-        $stmt->execute([$email]);
 
-        if ($stmt->fetch()) {
-            $erro = 'Já existe uma conta com esse email.';
-        } else {
-            try {
-                $hash = password_hash($password, PASSWORD_DEFAULT);
+    } else {
+        try {
+            $stmt = $pdo->prepare(
+                'SELECT id
+                 FROM utilizadores
+                 WHERE email = ?
+                 LIMIT 1'
+            );
+
+            $stmt->execute([$email]);
+
+            if ($stmt->fetch()) {
+                $erro = 'Já existe uma conta com esse email.';
+
+            } else {
+                $hash = password_hash(
+                    $password,
+                    PASSWORD_DEFAULT
+                );
 
                 $aprovado = $tipoConta === 'particular' ? 1 : 0;
 
                 $stmt = $pdo->prepare(
                     'INSERT INTO utilizadores
-                    (nome, email, password_hash, tipo_conta,
-                     nome_stand, stand_aprovado)
-                    VALUES (?, ?, ?, ?, ?, ?)'
+                        (nome, email, password_hash, tipo_conta,
+                         nome_stand, stand_aprovado)
+                     VALUES (?, ?, ?, ?, ?, ?)'
                 );
 
                 $stmt->execute([
@@ -70,25 +111,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $aprovado
                 ]);
 
+                $id = (int) $pdo->lastInsertId();
+
                 session_regenerate_id(true);
-                $_SESSION['utilizador_id'] = (int) $pdo->lastInsertId();
+
+                $_SESSION['utilizador_id'] = $id;
                 $_SESSION['utilizador_nome'] = $nome;
                 $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 
                 if ($tipoConta === 'stand') {
-                    redirecionar('minha_conta.php?stand=pendente');
+                    redirecionar(
+                        'minha_conta.php?stand=pendente'
+                    );
                 }
 
                 redirecionar('index.php');
-            } catch (PDOException $e) {
-                error_log($e->getMessage());
-                $erro = 'Não foi possível criar a conta. Tenta novamente.';
             }
+
+        } catch (PDOException $e) {
+            error_log($e->getMessage());
+
+            $erro = 'Não foi possível criar a conta. Tenta novamente.';
         }
     }
 }
 
 $tituloPagina = 'Criar conta';
+
 require __DIR__ . '/includes/header.php';
 ?>
 
@@ -132,21 +181,43 @@ require __DIR__ . '/includes/header.php';
 }
 
 .registo-separador {
-    margin: 20px 0;
-    text-align: center;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 22px 0;
     color: #777;
+    font-size: .9rem;
+}
+
+.registo-separador::before,
+.registo-separador::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: #ddd;
 }
 
 .registo-google {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
     width: 100%;
-    padding: 12px;
+    min-height: 48px;
+    padding: 12px 16px;
     border: 1px solid #ccc;
     border-radius: 8px;
-    background: transparent;
-    color: inherit;
+    background: #fff;
+    color: #222;
     font: inherit;
-    cursor: not-allowed;
-    opacity: .75;
+    font-weight: 600;
+    text-align: center;
+    text-decoration: none;
+    transition: background .2s;
+}
+
+.registo-google:hover {
+    background: #f5f5f5;
 }
 
 .registo-nota {
@@ -163,7 +234,9 @@ require __DIR__ . '/includes/header.php';
 </style>
 
 <section class="formulario-container">
+
     <h1>Criar conta Motocore</h1>
+
     <p>Escolhe o tipo de conta para começares.</p>
 
     <?php if ($erro !== ''): ?>
@@ -173,6 +246,7 @@ require __DIR__ . '/includes/header.php';
     <?php endif; ?>
 
     <div class="registo-opcoes">
+
         <button
             type="button"
             class="registo-opcao"
@@ -180,7 +254,9 @@ require __DIR__ . '/includes/header.php';
             aria-pressed="<?= $tipoConta === 'particular' ? 'true' : 'false' ?>"
         >
             <strong>👤 Conta Individual</strong>
-            <span>Para comprar motas, guardar favoritos e contactar vendedores.</span>
+            <span>
+                Para comprar motas, guardar favoritos e contactar vendedores.
+            </span>
         </button>
 
         <button
@@ -190,11 +266,15 @@ require __DIR__ . '/includes/header.php';
             aria-pressed="<?= $tipoConta === 'stand' ? 'true' : 'false' ?>"
         >
             <strong>🏢 Conta Empresarial</strong>
-            <span>Para stands profissionais que pretendem anunciar motas.</span>
+            <span>
+                Para stands profissionais que pretendem anunciar motas.
+            </span>
         </button>
+
     </div>
 
     <form method="post" class="formulario" id="form-registo">
+
         <input
             type="hidden"
             name="csrf_token"
@@ -209,6 +289,7 @@ require __DIR__ . '/includes/header.php';
         >
 
         <label for="nome">Nome do responsável / nome completo</label>
+
         <input
             id="nome"
             name="nome"
@@ -218,9 +299,13 @@ require __DIR__ . '/includes/header.php';
             value="<?= e($nome) ?>"
         >
 
-        <div id="campos-stand"
-             <?= $tipoConta !== 'stand' ? 'hidden' : '' ?>>
+        <div
+            id="campos-stand"
+            <?= $tipoConta !== 'stand' ? 'hidden' : '' ?>
+        >
+
             <label for="nome_stand">Nome do stand</label>
+
             <input
                 id="nome_stand"
                 name="nome_stand"
@@ -235,9 +320,11 @@ require __DIR__ . '/includes/header.php';
                 A conta empresarial ficará sujeita a validação
                 antes de poder publicar anúncios.
             </p>
+
         </div>
 
         <label for="email">Email</label>
+
         <input
             id="email"
             type="email"
@@ -249,6 +336,7 @@ require __DIR__ . '/includes/header.php';
         >
 
         <label for="password">Palavra-passe</label>
+
         <input
             id="password"
             type="password"
@@ -259,6 +347,7 @@ require __DIR__ . '/includes/header.php';
         >
 
         <label for="confirmar_password">Confirmar palavra-passe</label>
+
         <input
             id="confirmar_password"
             type="password"
@@ -268,30 +357,54 @@ require __DIR__ . '/includes/header.php';
             autocomplete="new-password"
         >
 
-        <button class="botao principal largura-total" type="submit">
+        <button
+            class="botao principal largura-total"
+            type="submit"
+        >
             Criar conta
         </button>
 
-        <div id="google-area"
-             <?= $tipoConta !== 'particular' ? 'hidden' : '' ?>>
-            <div class="registo-separador">ou</div>
-
-            <button
-                type="button"
-                class="registo-google"
-                disabled
-                title="A integração Google será configurada posteriormente"
-            >
-                G Continuar com Google — brevemente
-            </button>
-
-            <p class="registo-nota">
-                O acesso com Google ainda não está ativo.
-            </p>
-        </div>
     </form>
 
-    <p>Já tens conta? <a href="login.php">Inicia sessão</a>.</p>
+    <div id="google-area"
+         <?= $tipoConta !== 'particular' ? 'hidden' : '' ?>>
+
+        <div class="registo-separador">ou</div>
+
+        <a class="registo-google" href="google_login.php">
+
+            <svg
+                width="20"
+                height="20"
+                viewBox="0 0 48 48"
+                aria-hidden="true"
+            >
+                <path fill="#EA4335"
+                    d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"
+                    transform="translate(0 4)"/>
+                <path fill="#4285F4"
+                    d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.76 7.18l7.73 6C44.42 37.99 46.98 31.8 46.98 24.55z"/>
+                <path fill="#FBBC05"
+                    d="M10.53 28.59A14.4 14.4 0 0 1 9.75 24c0-1.59.27-3.13.76-4.59l-7.98-6.19A23.9 23.9 0 0 0 0 24c0 3.87.93 7.52 2.56 10.78l7.97-6.19z"/>
+                <path fill="#34A853"
+                    d="M24 48c6.48 0 11.93-2.13 15.91-5.8l-7.73-6c-2.14 1.45-4.89 2.3-8.18 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+            </svg>
+
+            Registar com Google
+
+        </a>
+
+        <p class="registo-nota">
+            Cria uma conta individual com a tua conta Google.
+        </p>
+
+    </div>
+
+    <p>
+        Já tens conta?
+        <a href="login.php">Inicia sessão</a>.
+    </p>
+
 </section>
 
 <script>
@@ -300,23 +413,29 @@ require __DIR__ . '/includes/header.php';
     const camposStand = document.getElementById('campos-stand');
     const nomeStand = document.getElementById('nome_stand');
     const googleArea = document.getElementById('google-area');
-    const opcaoParticular = document.getElementById('opcao-particular');
-    const opcaoStand = document.getElementById('opcao-stand');
+
+    const opcaoParticular =
+        document.getElementById('opcao-particular');
+
+    const opcaoStand =
+        document.getElementById('opcao-stand');
 
     function selecionarConta(valor) {
-        tipo.value = valor;
-
         const eStand = valor === 'stand';
+
+        tipo.value = valor;
 
         camposStand.hidden = !eStand;
         nomeStand.disabled = !eStand;
         nomeStand.required = eStand;
+
         googleArea.hidden = eStand;
 
         opcaoParticular.setAttribute(
             'aria-pressed',
             String(!eStand)
         );
+
         opcaoStand.setAttribute(
             'aria-pressed',
             String(eStand)
