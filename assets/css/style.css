@@ -935,20 +935,49 @@ button,
     border-radius: 0 0 var(--raio) var(--raio);
 }
 
-.formulario-mensagem textarea {
+/* .formulario-mensagem textarea {
     width: 100%;
-    padding: 12px;
-    resize: vertical;
+    height: 48px;
+    min-height: 48px;
+    max-height: 48px;
+    padding: 12px 48px 12px 14px;
+    resize: none;
+    overflow-y: auto;
     color: var(--texto);
-    background: #0b0f14;
+    background: var(--fundo);
     border: 1px solid var(--borda);
     border-radius: 8px;
     font: inherit;
+    line-height: 22px;
+    outline: none;
 }
 
 .formulario-mensagem textarea:focus {
-    outline: none;
     border-color: var(--cor-principal);
+    box-shadow: 0 0 0 3px #2589ff20;
+} */
+
+.formulario-mensagem textarea {
+    resize: none !important;
+    overflow-y: auto;
+    box-sizing: border-box;
+    width: 100%;
+    height: 48px;
+    min-height: 48px;
+    max-height: 48px;
+    border-radius: 8px;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    color: var(--texto);
+    background: var(--fundo);
+    border: 1px solid var(--borda);
+    font: inherit;
+    font-size: 14px;
+}
+
+.formulario-mensagem textarea::-webkit-resizer {
+    display: none;
 }
 
 @media (max-width: 600px) {
@@ -1178,4 +1207,91 @@ button,
     }
 }
 
+.estado-mensagem {
+    color: var(--texto-secundario);
+    font-size: 11px;
+    margin-left: 4px;
+}
 
+.mensagem-minha .estado-mensagem {
+    color: var(--texto-secundario);
+}
+
+#indicador-escrita {
+    min-height: 20px;
+    margin: 8px 4px;
+    font-size: 13px;
+}
+
+#indicador-escrita[hidden] {
+    display: none;
+}
+
+/* Caixa de mensagem com botão integrado */
+
+.formulario-mensagem .linha-envio {
+    position: relative;
+    display: block;
+}
+
+.formulario-mensagem .linha-envio textarea {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    padding: 12px 56px 12px 12px;
+    box-sizing: border-box;
+    resize: vertical;
+}
+
+.formulario-mensagem .botao-enviar {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+
+    display: grid;
+    place-items: center;
+
+    width: 38px;
+    height: 38px;
+    min-height: 38px;
+    padding: 0;
+    margin: 0;
+
+    border: 0;
+    border-radius: 8px;
+    background: var(--cor-principal);
+    color: #f1f5f9;
+    cursor: pointer;
+}
+
+.formulario-mensagem .botao-enviar:hover {
+    background: var(--cor-principal-hover);
+}
+
+.formulario-mensagem .botao-enviar svg {
+    display: block;
+}
+
+/* Indicador de escrita dentro da conversa */
+
+#indicador-escrita {
+    width: fit-content;
+    max-width: 85%;
+    margin: 10px 0;
+    padding: 10px 14px;
+}
+
+#indicador-escrita[hidden] {
+    display: none;
+}
+
+#indicador-escrita p {
+    margin: 5px 0 0;
+    color: var(--texto-secundario);
+    font-size: 13px;
+}
+
+.pontos-escrita {
+    color: var(--cor-principal);
+    letter-spacing: 2px;
+}
