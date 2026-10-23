@@ -20,6 +20,8 @@ if (!$anuncioId || $anuncioId < 1) {
     exit('Anúncio inválido.');
 }
 
+asdasdasd
+
 $compradorId = (int) $_SESSION['utilizador_id'];
 
 $stmt = $pdo->prepare("
