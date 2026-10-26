@@ -10,6 +10,7 @@ if (autenticado()) {
 
 $erro = '';
 $nome = '';
+$username = '';
 $email = '';
 $tipoConta = 'particular';
 $nomeStand = '';
@@ -18,6 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     validarCsrf();
 
     $nomeRecebido = $_POST['nome'] ?? '';
+    $usernameRecebido = $_POST['username'] ?? '';
     $emailRecebido = $_POST['email'] ?? '';
     $tipoRecebido = $_POST['tipo_conta'] ?? 'particular';
     $standRecebido = $_POST['nome_stand'] ?? '';
@@ -26,6 +28,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $nome = is_string($nomeRecebido)
         ? trim($nomeRecebido)
+        : '';
+
+    $username = is_string($usernameRecebido)
+        ? strtolower(trim($usernameRecebido))
         : '';
 
     $email = is_string($emailRecebido)
@@ -50,11 +56,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (
         $nome === '' ||
-        mb_strlen($nome) > 100 ||
+        mb_strlen($nome) > 100
+    ) {
+        $erro = 'Introduz um nome válido.';
+
+    } elseif (
+        !preg_match('/\A[a-z0-9._]{3,30}\z/', $username)
+    ) {
+        $erro = 'O nome de utilizador deve ter entre 3 e 30 caracteres. '
+              . 'Utiliza apenas letras, números, pontos e underscores.';
+
+    } elseif (
         !filter_var($email, FILTER_VALIDATE_EMAIL) ||
         strlen($email) > 190
     ) {
-        $erro = 'Preenche corretamente o nome e o email.';
+        $erro = 'Introduz um endereço de email válido.';
 
     } elseif (
         !in_array($tipoConta, ['particular', 'stand'], true)
@@ -75,6 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     } else {
         try {
+            // Verificar se o email já está registado.
             $stmt = $pdo->prepare(
                 'SELECT id
                  FROM utilizadores
@@ -88,50 +105,82 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $erro = 'Já existe uma conta com esse email.';
 
             } else {
-                $hash = password_hash(
-                    $password,
-                    PASSWORD_DEFAULT
-                );
-
-                $aprovado = $tipoConta === 'particular' ? 1 : 0;
-
+                // Verificar se o nome de utilizador está ocupado.
                 $stmt = $pdo->prepare(
-                    'INSERT INTO utilizadores
-                        (nome, email, password_hash, tipo_conta,
-                         nome_stand, stand_aprovado)
-                     VALUES (?, ?, ?, ?, ?, ?)'
+                    'SELECT id
+                     FROM utilizadores
+                     WHERE username = ?
+                     LIMIT 1'
                 );
 
-                $stmt->execute([
-                    $nome,
-                    $email,
-                    $hash,
-                    $tipoConta,
-                    $tipoConta === 'stand' ? $nomeStand : null,
-                    $aprovado
-                ]);
+                $stmt->execute([$username]);
 
-                $id = (int) $pdo->lastInsertId();
+                if ($stmt->fetch()) {
+                    $erro = 'Esse nome de utilizador já está ocupado.';
 
-                session_regenerate_id(true);
-
-                $_SESSION['utilizador_id'] = $id;
-                $_SESSION['utilizador_nome'] = $nome;
-                $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-
-                if ($tipoConta === 'stand') {
-                    redirecionar(
-                        'minha_conta.php?stand=pendente'
+                } else {
+                    $hash = password_hash(
+                        $password,
+                        PASSWORD_DEFAULT
                     );
-                }
 
-                redirecionar('index.php');
+                    $aprovado = $tipoConta === 'particular' ? 1 : 0;
+
+                    // Criar a conta.
+                    $stmt = $pdo->prepare(
+                        'INSERT INTO utilizadores
+                            (
+                                nome,
+                                username,
+                                email,
+                                password_hash,
+                                tipo_conta,
+                                nome_stand,
+                                stand_aprovado
+                            )
+                         VALUES (?, ?, ?, ?, ?, ?, ?)'
+                    );
+
+                    $stmt->execute([
+                        $nome,
+                        $username,
+                        $email,
+                        $hash,
+                        $tipoConta,
+                        $tipoConta === 'stand' ? $nomeStand : null,
+                        $aprovado
+                    ]);
+
+                    $id = (int) $pdo->lastInsertId();
+
+                    // Iniciar sessão.
+                    session_regenerate_id(true);
+
+                    $_SESSION['utilizador_id'] = $id;
+                    $_SESSION['utilizador_nome'] = $nome;
+                    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+
+                    // Redirecionar conforme o tipo de conta.
+                    if ($tipoConta === 'stand') {
+                        redirecionar(
+                            'minha_conta.php?stand=pendente'
+                        );
+                    }
+
+                    redirecionar('index.php');
+                }
             }
 
         } catch (PDOException $e) {
             error_log($e->getMessage());
 
-            $erro = 'Não foi possível criar a conta. Tenta novamente.';
+            // 23000 inclui violações de índices únicos.
+            if ($e->getCode() === '23000') {
+                $erro = 'O email ou nome de utilizador já está '
+                      . 'a ser utilizado. Escolhe outro.';
+            } else {
+                $erro = 'Não foi possível criar a conta. Tenta novamente.';
+            }
         }
     }
 }
@@ -151,18 +200,22 @@ require __DIR__ . '/includes/header.php';
 
 .registo-opcao {
     padding: 20px;
-    border: 1px solid #d8d8d8;
+    border: 1px solid var(--borda);
     border-radius: 12px;
-    background: transparent;
-    color: inherit;
+    background: #0b0f14;
+    color: var(--texto);
     text-align: left;
     cursor: pointer;
     transition: border-color .2s, background .2s;
 }
 
+.registo-opcao:hover {
+    border-color: #2589ff80;
+}
+
 .registo-opcao[aria-pressed="true"] {
-    border: 2px solid #f97316;
-    background: rgba(249, 115, 22, .08);
+    border: 2px solid var(--cor-principal);
+    background: #2589ff12;
 }
 
 .registo-opcao strong,
@@ -176,6 +229,7 @@ require __DIR__ . '/includes/header.php';
 }
 
 .registo-opcao span {
+    color: var(--texto-secundario);
     font-size: .9rem;
     line-height: 1.5;
 }
@@ -185,7 +239,7 @@ require __DIR__ . '/includes/header.php';
     align-items: center;
     gap: 12px;
     margin: 22px 0;
-    color: #777;
+    color: var(--texto-secundario);
     font-size: .9rem;
 }
 
@@ -194,7 +248,7 @@ require __DIR__ . '/includes/header.php';
     content: "";
     flex: 1;
     height: 1px;
-    background: #ddd;
+    background: var(--borda);
 }
 
 .registo-google {
@@ -205,25 +259,33 @@ require __DIR__ . '/includes/header.php';
     width: 100%;
     min-height: 48px;
     padding: 12px 16px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--borda);
     border-radius: 8px;
-    background: #fff;
+    background: #f8fafc;
     color: #222;
     font: inherit;
     font-weight: 600;
     text-align: center;
     text-decoration: none;
-    transition: background .2s;
+    transition: background .2s, transform .2s;
 }
 
 .registo-google:hover {
-    background: #f5f5f5;
+    background: #e2e8f0;
+    transform: translateY(-1px);
 }
 
 .registo-nota {
     margin-top: 12px;
+    color: var(--texto-secundario);
     font-size: .85rem;
-    color: #777;
+}
+
+.username-ajuda-registo {
+    margin: -3px 0 5px;
+    color: var(--texto-secundario);
+    font-size: 12px;
+    line-height: 1.5;
 }
 
 @media (max-width: 520px) {
@@ -293,11 +355,34 @@ require __DIR__ . '/includes/header.php';
         <input
             id="nome"
             name="nome"
+            type="text"
             required
             maxlength="100"
             autocomplete="name"
             value="<?= e($nome) ?>"
+            placeholder="O teu nome"
         >
+
+        <label for="username">Nome de utilizador</label>
+
+        <input
+            id="username"
+            name="username"
+            type="text"
+            required
+            minlength="3"
+            maxlength="30"
+            pattern="[A-Za-z0-9._]{3,30}"
+            autocomplete="username"
+            value="<?= e($username) ?>"
+            placeholder="ex.: motard.pt"
+            aria-describedby="username-ajuda"
+        >
+
+        <p id="username-ajuda" class="username-ajuda-registo">
+            O teu identificador público no Motocore. Entre 3 e 30
+            caracteres: letras, números, pontos e underscores.
+        </p>
 
         <div
             id="campos-stand"
@@ -309,6 +394,7 @@ require __DIR__ . '/includes/header.php';
             <input
                 id="nome_stand"
                 name="nome_stand"
+                type="text"
                 maxlength="150"
                 autocomplete="organization"
                 value="<?= e($nomeStand) ?>"
@@ -333,6 +419,7 @@ require __DIR__ . '/includes/header.php';
             maxlength="190"
             autocomplete="email"
             value="<?= e($email) ?>"
+            placeholder="teu@email.com"
         >
 
         <label for="password">Palavra-passe</label>
@@ -346,7 +433,9 @@ require __DIR__ . '/includes/header.php';
             autocomplete="new-password"
         >
 
-        <label for="confirmar_password">Confirmar palavra-passe</label>
+        <label for="confirmar_password">
+            Confirmar palavra-passe
+        </label>
 
         <input
             id="confirmar_password"
@@ -366,8 +455,10 @@ require __DIR__ . '/includes/header.php';
 
     </form>
 
-    <div id="google-area"
-         <?= $tipoConta !== 'particular' ? 'hidden' : '' ?>>
+    <div
+        id="google-area"
+        <?= $tipoConta !== 'particular' ? 'hidden' : '' ?>
+    >
 
         <div class="registo-separador">ou</div>
 

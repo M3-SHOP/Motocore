@@ -93,7 +93,7 @@ try {
     $pdo->beginTransaction();
 
     $stmt = $pdo->prepare(
-        'SELECT id, nome, estado
+        'SELECT id, nome, username, estado
          FROM utilizadores
          WHERE google_id = ?
          LIMIT 1
@@ -116,16 +116,16 @@ try {
 
             erroGoogle(
                 'Já existe uma conta com este email. Entra com o método '
-                . 'habitual e associa o Google nas definições da conta, '
-                . 'depois de implementarmos essa funcionalidade.'
+                . 'habitual. A associação de contas Google será tratada '
+                . 'separadamente nas definições.'
             );
         }
 
         $stmt = $pdo->prepare(
             'INSERT INTO utilizadores
-                (nome, email, password_hash, google_id,
+                (nome, username, email, password_hash, google_id,
                  tipo_conta, stand_aprovado, email_verificado_em)
-             VALUES (?, ?, NULL, ?, ?, ?, NOW())'
+             VALUES (?, NULL, ?, NULL, ?, ?, ?, NOW())'
         );
 
         $stmt->execute([
@@ -133,7 +133,7 @@ try {
             $email,
             $googleId,
             'particular',
-            1
+            0
         ]);
 
         $id = (int) $pdo->lastInsertId();
@@ -141,6 +141,7 @@ try {
         $utilizador = [
             'id' => $id,
             'nome' => $nome,
+            'username' => null,
             'estado' => 'ativo'
         ];
     }
@@ -164,6 +165,15 @@ try {
     $_SESSION['utilizador_id'] = (int) $utilizador['id'];
     $_SESSION['utilizador_nome'] = $utilizador['nome'];
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+
+    if (
+        !is_string($utilizador['username'] ?? null) ||
+        trim($utilizador['username']) === ''
+    ) {
+        redirecionar('escolher_username.php');
+    }
+
+    $_SESSION['utilizador_username'] = $utilizador['username'];
 
     redirecionar('index.php');
 

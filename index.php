@@ -1,10 +1,12 @@
-
 <?php
+declare(strict_types=1);
+
 require_once __DIR__ . '/includes/funcoes.php';
 
-$tituloPagina = 'Comprar e vender motas';
+$tituloPagina = 'Motocore — O teu mundo sobre duas rodas';
 
-$pesquisa = trim($_GET['q'] ?? '');
+$pesquisa = $_GET['q'] ?? '';
+$pesquisa = is_string($pesquisa) ? trim($pesquisa) : '';
 $pesquisa = mb_substr($pesquisa, 0, 100);
 
 $sql = "
@@ -30,7 +32,8 @@ $sql = "
             LIMIT 1
         ) AS imagem
     FROM anuncios a
-    INNER JOIN utilizadores u ON u.id = a.utilizador_id
+    INNER JOIN utilizadores u
+        ON u.id = a.utilizador_id
     WHERE a.estado_anuncio = 'ativo'
       AND a.moderacao = 'publicado'
       AND u.estado = 'ativo'
@@ -64,116 +67,217 @@ $sql .= ' ORDER BY a.criado_em DESC LIMIT 60';
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute($parametros);
-$anuncios = $stmt->fetchAll();
+$anuncios = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+/*
+ * Sem pesquisa:
+ * - os primeiros quatro anúncios aparecem em destaque;
+ * - os restantes aparecem na secção de recentes.
+ *
+ * Com pesquisa:
+ * - todos os resultados aparecem na mesma secção.
+ */
+if ($pesquisa === '') {
+    $destaques = array_slice($anuncios, 0, 4);
+    $recentes = array_slice($anuncios, 4);
+} else {
+    $destaques = [];
+    $recentes = $anuncios;
+}
 
 require __DIR__ . '/includes/header.php';
 ?>
 
-<section class="hero">
-    <div class="hero-texto">
-        <span class="etiqueta">O teu marketplace de motas</span>
-        <h1>Encontra a tua próxima mota.</h1>
-        <p>
-            Descobre anúncios de particulares e stands de todo o país.
-            Publica gratuitamente e fala diretamente com os vendedores.
-        </p>
+<main class="pagina-inicial">
 
-        <?php if (autenticado()): ?>
-            <a class="botao principal" href="publicar.php">
-                + Publicar anúncio
-            </a>
-        <?php else: ?>
-            <a class="botao principal" href="registo.php">
-                Começar a vender
-            </a>
-        <?php endif; ?>
-    </div>
-</section>
+    <!-- DESTAQUE PRINCIPAL -->
+    <section class="hero-motocore">
 
-<section class="secao-anuncios">
-    <div class="titulo-secao">
-        <div>
-            <h2>
-                <?= $pesquisa !== '' ? 'Resultados da pesquisa' : 'Anúncios recentes' ?>
-            </h2>
+        <img
+            class="hero-motocore-imagem"
+            src="https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=1800&q=85"
+            alt="Mota para os amantes das duas rodas"
+            fetchpriority="high"
+        >
+
+        <div class="hero-motocore-overlay" aria-hidden="true"></div>
+
+        <div class="hero-motocore-conteudo">
+
+            <span class="hero-motocore-etiqueta">
+                O teu próximo destino começa aqui
+            </span>
+
+            <h1>
+                A tua próxima<br>
+                <span>mota espera por ti.</span>
+            </h1>
+
             <p>
-                <?= count($anuncios) ?> anúncios encontrados nesta página
+                Descobre motas incríveis, compara oportunidades
+                e encontra a máquina ideal para ti.
             </p>
-        </div>
-    </div>
 
-    <?php if (!$anuncios): ?>
-        <div class="estado-vazio">
-            <h3>Ainda não encontrámos anúncios</h3>
-            <p>
-                <?php if ($pesquisa !== ''): ?>
-                    Experimenta pesquisar por outra marca ou modelo.
-                <?php else: ?>
-                    Os anúncios publicados aparecerão aqui.
-                <?php endif; ?>
-            </p>
-        </div>
-    <?php else: ?>
-        <div class="grelha-anuncios">
-            <?php foreach ($anuncios as $anuncio): ?>
-                <article class="cartao-anuncio">
-                    <a class="imagem-anuncio"
-                       href="anuncio.php?id=<?= (int) $anuncio['id'] ?>">
+            <form
+                action="index.php"
+                method="get"
+                class="pesquisa-motocore"
+                role="search"
+            >
+                <span class="pesquisa-icone" aria-hidden="true">⌕</span>
 
-                        <?php if ($anuncio['imagem']): ?>
-                            <img
-                                src="<?= e($anuncio['imagem']) ?>"
-                                alt="<?= e($anuncio['titulo']) ?>"
-                                loading="lazy"
-                            >
-                        <?php else: ?>
-                            <div class="sem-imagem">
-                                <span>Sem fotografia</span>
-                            </div>
-                        <?php endif; ?>
+                <input
+                    type="search"
+                    name="q"
+                    maxlength="100"
+                    placeholder="Marca, modelo ou localização..."
+                    value="<?= e($pesquisa) ?>"
+                    aria-label="Pesquisar motas"
+                >
+
+                <button type="submit">Pesquisar</button>
+            </form>
+
+            <div class="hero-motocore-acoes">
+
+                <?php if (autenticado()): ?>
+                    <a href="publicar.php" class="botao principal">
+                        + Publicar anúncio
                     </a>
+                <?php else: ?>
+                    <a href="registo.php" class="botao principal">
+                        Começar a vender
+                    </a>
+                <?php endif; ?>
 
-                    <div class="detalhes-anuncio">
-                        <h3>
-                            <a href="anuncio.php?id=<?= (int) $anuncio['id'] ?>">
-                                <?= e($anuncio['titulo']) ?>
-                            </a>
-                        </h3>
+                <span class="hero-nota">
+                    Encontra a mota certa para ti.
+                </span>
 
-                        <p class="preco">
-                            <?= number_format(
-                                (float) $anuncio['preco'],
-                                2,
-                                ',',
-                                '.'
-                            ) ?> €
-                        </p>
-
-                        <p class="especificacoes">
-                            <?= (int) $anuncio['ano'] ?>
-                            · <?= number_format((int) $anuncio['quilometros'], 0, ',', '.') ?> km
-                        </p>
-
-                        <p class="localizacao">
-                            <?= e($anuncio['localidade']) ?>,
-                            <?= e($anuncio['distrito']) ?>
-                        </p>
-
-                        <p class="vendedor">
-                            <?= e(
-                                $anuncio['tipo_conta'] === 'stand'
-                                    ? ($anuncio['nome_stand'] ?: $anuncio['vendedor'])
-                                    : $anuncio['vendedor']
-                            ) ?>
-                            <?php if ($anuncio['tipo_conta'] === 'stand'): ?>
-                                <span class="selo-stand">Stand</span>
-                            <?php endif; ?>
-                        </p>
-                    </div>
-                </article>
-            <?php endforeach; ?>
+            </div>
         </div>
+    </section>
+
+    <?php if ($pesquisa === ''): ?>
+
+        <!-- MOTAS EM DESTAQUE -->
+        <section class="secao-motocore">
+
+            <div class="cabecalho-motocore">
+                <div>
+                    <span class="subtitulo-motocore">
+                        SELEÇÃO MOTOCORE
+                    </span>
+
+                    <h2>Motas em destaque</h2>
+
+                    <p>
+                        Descobre algumas das oportunidades mais recentes.
+                    </p>
+                </div>
+            </div>
+
+            <?php if (empty($destaques)): ?>
+
+                <div class="estado-vazio">
+                    <h3>Em breve, novas motas</h3>
+                    <p>
+                        Assim que existirem anúncios publicados,
+                        aparecerão aqui.
+                    </p>
+                </div>
+
+            <?php else: ?>
+
+                <div class="grelha-anuncios">
+                    <?php foreach ($destaques as $anuncio): ?>
+                        <?php
+                        require __DIR__ . '/includes/cartao_anuncio.php';
+                        ?>
+                    <?php endforeach; ?>
+                </div>
+
+            <?php endif; ?>
+
+        </section>
+
     <?php endif; ?>
-</section>
+
+    <!-- ANÚNCIOS RECENTES OU RESULTADOS DA PESQUISA -->
+    <section class="secao-motocore">
+
+        <div class="cabecalho-motocore">
+            <div>
+                <span class="subtitulo-motocore">
+                    <?= $pesquisa !== ''
+                        ? 'RESULTADOS DA PESQUISA'
+                        : 'ACABARAM DE CHEGAR' ?>
+                </span>
+
+                <h2>
+                    <?= $pesquisa !== ''
+                        ? 'Motas encontradas'
+                        : 'Anúncios recentes' ?>
+                </h2>
+
+                <p>
+                    <?= count($recentes) ?>
+                    <?= count($recentes) === 1
+                        ? 'anúncio encontrado'
+                        : 'anúncios encontrados' ?>
+                </p>
+            </div>
+
+            <?php if ($pesquisa !== ''): ?>
+                <a href="index.php" class="link-ver-todos">
+                    Limpar pesquisa
+                </a>
+            <?php endif; ?>
+        </div>
+
+        <?php if (empty($recentes)): ?>
+
+            <div class="estado-vazio">
+                <h3>
+                    <?= $pesquisa !== ''
+                        ? 'Não encontrámos motas'
+                        : 'Ainda não há mais anúncios' ?>
+                </h3>
+
+                <p>
+                    <?php if ($pesquisa !== ''): ?>
+                        Experimenta pesquisar por outra marca,
+                        modelo ou localização.
+                    <?php else: ?>
+                        Publica novos anúncios para os veres aqui.
+                    <?php endif; ?>
+                </p>
+
+                <?php if ($pesquisa !== ''): ?>
+                    <a href="index.php" class="botao principal">
+                        Ver todos os anúncios
+                    </a>
+                <?php elseif (autenticado()): ?>
+                    <a href="publicar.php" class="botao principal">
+                        Publicar anúncio
+                    </a>
+                <?php endif; ?>
+            </div>
+
+        <?php else: ?>
+
+            <div class="grelha-anuncios">
+                <?php foreach ($recentes as $anuncio): ?>
+                    <?php
+                    require __DIR__ . '/includes/cartao_anuncio.php';
+                    ?>
+                <?php endforeach; ?>
+            </div>
+
+        <?php endif; ?>
+
+    </section>
+
+</main>
 
 <?php require __DIR__ . '/includes/footer.php'; ?>

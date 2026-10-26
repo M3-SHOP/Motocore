@@ -52,7 +52,7 @@ if (
 $erro = '';
 $marcas = [
     'Aprilia', 'BMW', 'Ducati', 'Honda', 'Kawasaki',
-    'KTM', 'Suzuki', 'Triumph', '-', 'Outra'
+    'KTM', 'Suzuki', 'Triumph', 'Yamaha', 'Outra'
 ];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
