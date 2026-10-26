@@ -5,7 +5,11 @@ declare(strict_types=1);
 require_once __DIR__ . '/includes/funcoes.php';
 
 if (autenticado()) {
-    redirecionar('index.php');
+    if (($utilizador['papel'] ?? '') === 'admin') {
+    redirecionar('admin/dashboard.php');
+}
+
+redirecionar('index.php');
 }
 
 $erro = '';
@@ -33,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         try {
             $stmt = $pdo->prepare(
-                'SELECT id, nome, password_hash, estado
+                'SELECT id, nome, password_hash, estado, papel
                  FROM utilizadores
                  WHERE email = ?
                  LIMIT 1'
