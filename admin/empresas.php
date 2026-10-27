@@ -1,16 +1,22 @@
 <?php
+
 declare(strict_types=1);
 
 require_once __DIR__ . '/../includes/funcoes.php';
 
+// Verificar se existe sessão iniciada
 if (!autenticado()) {
     redirecionar('../login.php');
 }
 
+// Confirmar permissões na base de dados
 $stmt = $pdo->prepare(
     'SELECT nome, papel, estado
-     FROM utilizadores WHERE id = ? LIMIT 1'
+     FROM utilizadores
+     WHERE id = ?
+     LIMIT 1'
 );
+
 $stmt->execute([(int) $_SESSION['utilizador_id']]);
 $admin = $stmt->fetch();
 
@@ -35,10 +41,12 @@ function eEmpresa(?string $valor): string
 $mensagem = '';
 $erro = '';
 
+// Processar ações administrativas
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     validarCsrf();
 
     $acao = $_POST['acao'] ?? '';
+
     $id = filter_var(
         $_POST['utilizador_id'] ?? null,
         FILTER_VALIDATE_INT
@@ -58,8 +66,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $stmt = $pdo->prepare(
                 'SELECT id, tipo_conta, papel, estado, stand_aprovado
-                 FROM utilizadores WHERE id = ? FOR UPDATE'
+                 FROM utilizadores
+                 WHERE id = ?
+                 FOR UPDATE'
             );
+
             $stmt->execute([$id]);
             $empresa = $stmt->fetch();
 
@@ -87,6 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                          SET estado = 'ativo', stand_aprovado = 1
                          WHERE id = ?"
                     );
+
                     $stmt->execute([$id]);
                     $mensagem = 'Stand aprovado com sucesso.';
                     break;
@@ -106,6 +118,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                          SET estado = 'suspenso'
                          WHERE id = ?"
                     );
+
                     $stmt->execute([$id]);
                     $mensagem = 'Pedido rejeitado.';
                     break;
@@ -121,9 +134,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
 
                     $stmt = $pdo->prepare(
-                        "UPDATE utilizadores SET estado = 'suspenso'
+                        "UPDATE utilizadores
+                         SET estado = 'suspenso'
                          WHERE id = ?"
                     );
+
                     $stmt->execute([$id]);
                     $mensagem = 'Stand suspenso.';
                     break;
@@ -139,9 +154,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
 
                     $stmt = $pdo->prepare(
-                        "UPDATE utilizadores SET estado = 'ativo'
+                        "UPDATE utilizadores
+                         SET estado = 'ativo'
                          WHERE id = ?"
                     );
+
                     $stmt->execute([$id]);
                     $mensagem = 'Stand reativado.';
                     break;
@@ -154,6 +171,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             error_log($ex->getMessage());
+
             $erro = $ex instanceof RuntimeException
                 ? $ex->getMessage()
                 : 'Não foi possível concluir a operação.';
@@ -161,9 +179,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-/*
- * Pesquisa e filtros.
- */
+// Pesquisa e filtros
 $pesquisa = trim((string) ($_GET['q'] ?? ''));
 $filtro = (string) ($_GET['estado'] ?? '');
 
@@ -206,11 +222,10 @@ if ($filtro === 'pendente') {
 
 $sqlWhere = implode(' AND ', $where);
 
-/*
- * Estatísticas.
- */
+// Estatísticas
 $totalPendentes = (int) $pdo->query(
-    "SELECT COUNT(*) FROM utilizadores
+    "SELECT COUNT(*)
+     FROM utilizadores
      WHERE tipo_conta = 'stand'
        AND papel <> 'admin'
        AND estado = 'pendente'
@@ -218,7 +233,8 @@ $totalPendentes = (int) $pdo->query(
 )->fetchColumn();
 
 $totalAprovados = (int) $pdo->query(
-    "SELECT COUNT(*) FROM utilizadores
+    "SELECT COUNT(*)
+     FROM utilizadores
      WHERE tipo_conta = 'stand'
        AND papel <> 'admin'
        AND estado = 'ativo'
@@ -226,15 +242,14 @@ $totalAprovados = (int) $pdo->query(
 )->fetchColumn();
 
 $totalSuspensos = (int) $pdo->query(
-    "SELECT COUNT(*) FROM utilizadores
+    "SELECT COUNT(*)
+     FROM utilizadores
      WHERE tipo_conta = 'stand'
        AND papel <> 'admin'
        AND estado = 'suspenso'"
 )->fetchColumn();
 
-/*
- * Consultar empresas.
- */
+// Consultar empresas
 $stmt = $pdo->prepare(
     "SELECT
         u.id,
@@ -271,18 +286,20 @@ $empresas = $stmt->fetchAll();
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<title>Empresas | Motocore Admin</title>
-
+<title>Empresas | Motocore</title>
 
 <style>
 :root {
     --cor-principal: #2589ff;
     --cor-principal-hover: #0870e8;
+
     --texto: #f1f5f9;
     --texto-secundario: #9ca3af;
+
     --fundo: #0b0f14;
     --branco: #151b23;
     --borda: #283241;
+
     --raio: 12px;
 }
 
@@ -303,28 +320,46 @@ a {
     text-decoration: none;
 }
 
-button, input, select, textarea {
+button,
+input,
+select {
     font: inherit;
 }
 
-button, .btn {
+/* BOTÕES */
+
+button,
+.btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    padding: 10px 15px;
+    min-height: 38px;
+    padding: 9px 13px;
     border: 1px solid transparent;
     border-radius: 8px;
     background: var(--cor-principal);
     color: #fff;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 700;
     cursor: pointer;
-    transition: background .2s, transform .2s;
+    transition:
+        background .2s,
+        border-color .2s,
+        transform .2s;
 }
 
-button:hover, .btn:hover {
+button:hover,
+.btn:hover {
     background: var(--cor-principal-hover);
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible {
+    outline: 2px solid #60aaff;
+    outline-offset: 3px;
 }
 
 .btn-secundario {
@@ -355,7 +390,169 @@ button:hover, .btn:hover {
     background: #047857;
 }
 
-/* CONTEÚDO */
+/* ESTRUTURA */
+
+.layout {
+    min-height: 100vh;
+}
+
+/* BARRA LATERAL */
+
+.sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    width: 255px;
+    padding: 26px 18px;
+    overflow-y: auto;
+    background: #10151c;
+    border-right: 1px solid var(--borda);
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    margin: 0 0 36px 8px;
+    font-size: 25px;
+    font-weight: 800;
+    letter-spacing: -.8px;
+}
+
+.brand span {
+    color: var(--cor-principal);
+}
+
+.admin-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    width: fit-content;
+    margin: -22px 0 28px 8px;
+    padding: 5px 9px;
+    border: 1px solid #2589ff35;
+    border-radius: 6px;
+    background: #2589ff12;
+    color: #60aaff;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.label {
+    margin: 0 10px 12px;
+    color: #7c8797;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.3px;
+    text-transform: uppercase;
+}
+
+.nav {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 46px;
+    margin: 4px 0;
+    padding: 12px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    color: #aeb8c6;
+    font-size: 14px;
+    transition: background .2s, color .2s, border-color .2s;
+}
+
+.nav-icon {
+    display: grid;
+    place-items: center;
+    width: 23px;
+    flex-shrink: 0;
+    color: #91a0b2;
+    font-size: 17px;
+}
+
+.nav:hover {
+    background: #151e29;
+    color: #fff;
+}
+
+.nav:hover .nav-icon {
+    color: #60aaff;
+}
+
+.nav.active {
+    background: #172d48;
+    border-color: #2589ff35;
+    color: #83bdff;
+}
+
+.nav.active .nav-icon {
+    color: #60aaff;
+}
+
+.sidebar-bottom {
+    margin-top: auto;
+    padding: 20px 8px 0;
+    border-top: 1px solid var(--borda);
+}
+
+.admin-perfil {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.admin-avatar {
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    flex-shrink: 0;
+    border: 1px solid #2589ff40;
+    border-radius: 50%;
+    background: #172d48;
+    color: #83bdff;
+    font-size: 17px;
+    font-weight: 800;
+}
+
+.admin-info {
+    min-width: 0;
+}
+
+.admin-info strong {
+    display: block;
+    overflow-wrap: anywhere;
+    font-size: 13px;
+}
+
+.admin-info small {
+    display: block;
+    margin-top: 3px;
+    color: var(--texto-secundario);
+    font-size: 12px;
+}
+
+.voltar-site {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-top: 22px;
+    padding: 11px;
+    border-radius: 8px;
+    color: #9ca3af;
+    font-size: 13px;
+    transition: background .2s, color .2s;
+}
+
+.voltar-site:hover {
+    background: #1b2635;
+    color: #60aaff;
+}
+
+/* CONTEÚDO PRINCIPAL */
 
 .main {
     min-width: 0;
@@ -373,7 +570,7 @@ button:hover, .btn:hover {
     gap: 16px;
     min-height: 70px;
     padding: 16px 34px;
-    background: #10151ceF;
+    background: #10151cef;
     border-bottom: 1px solid var(--borda);
     backdrop-filter: blur(12px);
 }
@@ -408,6 +605,7 @@ button:hover, .btn:hover {
     height: 7px;
     border-radius: 50%;
     background: #4ade80;
+    box-shadow: 0 0 10px #4ade8040;
 }
 
 .content {
@@ -417,7 +615,14 @@ button:hover, .btn:hover {
     padding: 34px;
 }
 
-/* TÍTULOS */
+/* CABEÇALHO */
+
+.cabecalho-pagina {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+}
 
 .eyebrow {
     color: #60aaff;
@@ -442,13 +647,104 @@ h1 {
     line-height: 1.8;
 }
 
+.admin-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 12px;
+    border: 1px solid var(--borda);
+    border-radius: 8px;
+    background: var(--branco);
+    color: #cbd5e1;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+/* ESTATÍSTICAS */
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 17px;
+    margin: 32px 0 40px;
+}
+
+.card {
+    min-width: 0;
+    padding: 22px;
+    border: 1px solid var(--borda);
+    border-radius: var(--raio);
+    background: var(--branco);
+    transition: transform .2s, border-color .2s, box-shadow .2s;
+}
+
+.card:hover {
+    transform: translateY(-3px);
+    border-color: #2589ff70;
+    box-shadow: 0 10px 28px #00000025;
+}
+
+.card-topo {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.card-label {
+    color: var(--texto-secundario);
+    font-size: 13px;
+}
+
+.card-icon {
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    flex-shrink: 0;
+    border: 1px solid #2589ff30;
+    border-radius: 10px;
+    background: #2589ff14;
+    color: #60aaff;
+    font-size: 20px;
+}
+
+.card-icon.pendente-icon {
+    border-color: #f59e0b30;
+    background: #f59e0b12;
+    color: #fbbf24;
+}
+
+.card-icon.suspenso-icon {
+    border-color: #f8717130;
+    background: #f8717112;
+    color: #fca5a5;
+}
+
+.number {
+    margin: 18px 0 5px;
+    color: #f8fafc;
+    font-size: clamp(29px, 3vw, 36px);
+    font-weight: 800;
+    line-height: 1.2;
+    letter-spacing: -.8px;
+    overflow-wrap: anywhere;
+}
+
+.card small {
+    color: #7c8797;
+    font-size: 12px;
+}
+
+/* SECÇÕES */
+
 .section-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 16px;
     flex-wrap: wrap;
-    margin: 30px 0 20px;
+    gap: 16px;
+    margin: 0 0 20px;
 }
 
 .section-title {
@@ -464,47 +760,7 @@ h1 {
     line-height: 1.7;
 }
 
-/* ESTATÍSTICAS */
-
-.stats {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 17px;
-    margin: 30px 0;
-}
-
-.card {
-    min-width: 0;
-    padding: 22px;
-    border: 1px solid var(--borda);
-    border-radius: var(--raio);
-    background: var(--branco);
-    transition: border-color .2s, transform .2s;
-}
-
-.card:hover {
-    transform: translateY(-2px);
-    border-color: #2589ff70;
-}
-
-.card-label {
-    color: var(--texto-secundario);
-    font-size: 13px;
-}
-
-.number {
-    margin: 15px 0 5px;
-    font-size: clamp(28px, 3vw, 36px);
-    font-weight: 800;
-    line-height: 1.2;
-}
-
-.card small {
-    color: #7c8797;
-    font-size: 12px;
-}
-
-/* PAINÉIS E FORMULÁRIOS */
+/* PAINÉIS */
 
 .panel {
     min-width: 0;
@@ -515,12 +771,13 @@ h1 {
     background: var(--branco);
 }
 
-.filtros, .form-row {
+/* PESQUISA E FILTROS */
+
+.filtros {
     display: flex;
-    align-items: end;
+    align-items: flex-end;
     flex-wrap: wrap;
     gap: 14px;
-    margin-bottom: 22px;
 }
 
 .campo {
@@ -537,9 +794,11 @@ h1 {
     font-weight: 700;
 }
 
-input, select, textarea {
+input,
+select {
     width: 100%;
     min-width: 0;
+    min-height: 42px;
     padding: 11px 12px;
     border: 1px solid var(--borda);
     border-radius: 8px;
@@ -549,11 +808,12 @@ input, select, textarea {
     font-size: 13px;
 }
 
-input::placeholder, textarea::placeholder {
+input::placeholder {
     color: #687587;
 }
 
-input:focus, select:focus, textarea:focus {
+input:focus,
+select:focus {
     border-color: var(--cor-principal);
     box-shadow: 0 0 0 3px #2589ff18;
 }
@@ -563,12 +823,13 @@ select option {
     color: var(--texto);
 }
 
-textarea {
-    min-height: 100px;
-    resize: vertical;
+.filtros-botoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
 }
 
-/* TABELAS */
+/* TABELA */
 
 .table-wrap {
     width: 100%;
@@ -613,10 +874,17 @@ tbody tr:hover {
     background: #1b2635;
 }
 
-td small {
+td strong {
+    font-size: 13px;
+    overflow-wrap: anywhere;
+}
+
+.muted {
     display: block;
     margin-top: 4px;
     color: #7c8797;
+    font-size: 12px;
+    overflow-wrap: anywhere;
 }
 
 .acoes {
@@ -624,6 +892,10 @@ td small {
     flex-wrap: wrap;
     gap: 7px;
     min-width: 150px;
+}
+
+.acoes form {
+    margin: 0;
 }
 
 /* ESTADOS */
@@ -641,33 +913,37 @@ td small {
     white-space: nowrap;
 }
 
-.badge-ativo, .badge-aprovado, .badge-resolvida {
+.badge-ativo {
     border-color: #34d39935;
     background: #34d39912;
     color: #6ee7b7;
 }
 
-.badge-pendente, .badge-analise {
+.badge-pendente {
     border-color: #f59e0b35;
     background: #f59e0b12;
     color: #fbbf24;
 }
 
-.badge-inativo, .badge-rejeitado, .badge-removido {
+.badge-suspenso {
     border-color: #f8717135;
     background: #f8717112;
     color: #fca5a5;
 }
 
-/* MENSAGENS */
+/* ALERTAS */
 
 .alert {
-    margin: 20px 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin: 22px 0;
     padding: 14px 16px;
     border: 1px solid var(--borda);
     border-radius: 9px;
     background: var(--branco);
     font-size: 13px;
+    line-height: 1.7;
 }
 
 .alert-sucesso {
@@ -682,11 +958,12 @@ td small {
     color: #fca5a5;
 }
 
-.alert-aviso {
-    border-color: #f59e0b50;
-    background: #f59e0b10;
-    color: #fbbf24;
+.alert-icon {
+    flex-shrink: 0;
+    font-weight: 800;
 }
+
+/* ESTADO VAZIO */
 
 .vazio {
     padding: 45px 20px;
@@ -694,41 +971,24 @@ td small {
     text-align: center;
 }
 
+.vazio-icon {
+    display: grid;
+    place-items: center;
+    width: 52px;
+    height: 52px;
+    margin: 0 auto 15px;
+    border: 1px solid var(--borda);
+    border-radius: 14px;
+    background: #10151c;
+    color: #60aaff;
+    font-size: 23px;
+}
+
 .vazio strong {
     display: block;
     margin-bottom: 8px;
     color: var(--texto);
     font-size: 16px;
-}
-
-/* PAGINAÇÃO */
-
-.paginacao {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 22px;
-}
-
-.paginacao a, .paginacao span {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 36px;
-    padding: 9px 12px;
-    border: 1px solid var(--borda);
-    border-radius: 7px;
-    background: var(--branco);
-    color: #cbd5e1;
-    font-size: 12px;
-}
-
-.paginacao .active {
-    border-color: var(--cor-principal);
-    background: #172d48;
-    color: #83bdff;
 }
 
 /* RODAPÉ */
@@ -745,6 +1005,10 @@ footer {
 /* TABLETS */
 
 @media (max-width: 1150px) {
+    .sidebar {
+        width: 225px;
+    }
+
     .main {
         margin-left: 225px;
     }
@@ -757,14 +1021,71 @@ footer {
         padding-inline: 22px;
     }
 
-    .stats {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+    .card {
+        padding: 19px;
     }
 }
 
 /* TELEMÓVEIS */
 
 @media (max-width: 700px) {
+    .sidebar {
+        position: relative;
+        inset: auto;
+        width: 100%;
+        padding: 18px 14px;
+        overflow: visible;
+        border-right: 0;
+        border-bottom: 1px solid var(--borda);
+    }
+
+    .brand {
+        margin: 0 0 12px 4px;
+        font-size: 23px;
+    }
+
+    .admin-badge {
+        margin: 0 0 17px 4px;
+    }
+
+    .label {
+        margin: 0 4px 7px;
+    }
+
+    .sidebar nav {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 5px;
+    }
+
+    .nav {
+        min-height: 42px;
+        gap: 8px;
+        margin: 0;
+        padding: 10px;
+        font-size: 12px;
+    }
+
+    .nav-icon {
+        width: 20px;
+        font-size: 15px;
+    }
+
+    .sidebar-bottom {
+        margin-top: 15px;
+        padding: 14px 4px 0;
+    }
+
+    .admin-avatar {
+        width: 36px;
+        height: 36px;
+    }
+
+    .voltar-site {
+        margin-top: 12px;
+        padding: 9px;
+    }
+
     .main {
         margin-left: 0;
     }
@@ -791,6 +1112,11 @@ footer {
         padding: 24px 14px;
     }
 
+    .cabecalho-pagina {
+        flex-direction: column;
+        gap: 14px;
+    }
+
     h1 {
         font-size: 28px;
     }
@@ -799,23 +1125,55 @@ footer {
         font-size: 13px;
     }
 
+    .admin-tag {
+        padding: 7px 10px;
+    }
+
     .stats {
         gap: 10px;
+        margin: 24px 0 32px;
     }
 
     .card {
-        padding: 15px;
+        padding: 14px;
     }
 
-    .panel {
-        padding: 16px;
+    .card-topo {
+        align-items: flex-start;
+        flex-direction: column-reverse;
+        gap: 12px;
+    }
+
+    .card-icon {
+        width: 35px;
+        height: 35px;
+        border-radius: 9px;
+        font-size: 17px;
+    }
+
+    .card-label {
+        font-size: 12px;
+    }
+
+    .number {
+        margin: 14px 0 5px;
+        font-size: 28px;
+    }
+
+    .card small {
+        font-size: 11px;
+        line-height: 1.6;
     }
 
     .section-title {
         font-size: 19px;
     }
 
-    .filtros, .form-row {
+    .panel {
+        padding: 16px;
+    }
+
+    .filtros {
         align-items: stretch;
         flex-direction: column;
     }
@@ -824,11 +1182,30 @@ footer {
         min-width: 0;
     }
 
-    .acoes {
-        min-width: 130px;
+    .filtros-botoes {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
     }
 
-    th, td {
+    .filtros-botoes button,
+    .filtros-botoes a {
+        width: 100%;
+    }
+
+    .acoes {
+        min-width: 135px;
+    }
+
+    .acoes form {
+        flex: 1 1 auto;
+    }
+
+    .acoes button {
+        width: 100%;
+    }
+
+    th,
+    td {
         padding: 12px;
     }
 
@@ -838,119 +1215,329 @@ footer {
 }
 
 @media (max-width: 360px) {
+    .sidebar nav {
+        grid-template-columns: 1fr;
+    }
+
     .stats {
+        grid-template-columns: 1fr;
+    }
+
+    .card-topo {
+        align-items: center;
+        flex-direction: row;
+    }
+
+    .number {
+        font-size: 31px;
+    }
+
+    .filtros-botoes {
         grid-template-columns: 1fr;
     }
 }
 </style>
-
 </head>
+
 <body>
 
 <div class="layout">
+
     <aside class="sidebar">
+
         <a class="brand" href="dashboard.php">
             MOTO<span>CORE</span>
         </a>
 
+        <div class="admin-badge">
+            <span>●</span>
+            PAINEL ADMINISTRATIVO
+        </div>
+
         <div class="label">Principal</div>
 
         <nav aria-label="Navegação administrativa">
-            <a class="nav" href="dashboard.php">▦ Dashboard</a>
-            <a class="nav" href="anuncios.php">🏍 Anúncios</a>
-            <a class="nav active" href="empresas.php" aria-current="page">▤ Empresas</a>
-            <a class="nav" href="denuncias.php">⚑ Denúncias</a>
+
+            <a class="nav" href="dashboard.php">
+                <span class="nav-icon">▦</span>
+                <span>Dashboard</span>
+            </a>
+
+            <a class="nav" href="anuncios.php">
+                <span class="nav-icon">🏍</span>
+                <span>Anúncios</span>
+            </a>
+
+            <a class="nav active" href="empresas.php" aria-current="page">
+                <span class="nav-icon">▤</span>
+                <span>Empresas</span>
+            </a>
+
+            <a class="nav" href="denuncias.php">
+                <span class="nav-icon">⚑</span>
+                <span>Denúncias</span>
+            </a>
+
         </nav>
 
         <div class="sidebar-bottom">
-            <strong><?= eEmpresa((string) $admin['nome']) ?></strong>
-            <div>Administrador</div>
-            <a class="nav" href="../index.php">← Voltar ao site</a>
+
+            <div class="admin-perfil">
+
+                <div class="admin-avatar">
+                    <?= eEmpresa(
+                        strtoupper(
+                            function_exists('mb_substr')
+                                ? mb_substr((string) $admin['nome'], 0, 1, 'UTF-8')
+                                : substr((string) $admin['nome'], 0, 1)
+                        )
+                    ) ?>
+                </div>
+
+                <div class="admin-info">
+                    <strong>
+                        <?= eEmpresa((string) $admin['nome']) ?>
+                    </strong>
+                    <small>Administrador</small>
+                </div>
+
+            </div>
+
+            <a class="voltar-site" href="../index.php">
+                <span>←</span>
+                <span>Voltar ao site</span>
+            </a>
+
         </div>
+
     </aside>
 
     <main class="main">
+
         <header class="topbar">
-            Motocore / Administração / <strong>Empresas</strong>
+
+            <div class="caminho">
+                Motocore
+                <span>/</span>
+                Administração
+                <span>/</span>
+                <strong>Empresas</strong>
+            </div>
+
+            <div class="estado-admin">
+                Sessão de administrador ativa
+            </div>
+
         </header>
 
         <div class="content">
-            <div class="eyebrow">Centro de controlo</div>
-            <h1>Gestão de empresas</h1>
-            <p class="subtitle">
-                Analisa pedidos de registo, aprova stands e gere as contas profissionais.
-            </p>
+
+            <section class="cabecalho-pagina">
+
+                <div>
+                    <div class="eyebrow">Centro de controlo</div>
+
+                    <h1>Gestão de empresas</h1>
+
+                    <p class="subtitle">
+                        Analisa pedidos de registo, aprova stands e gere
+                        as contas profissionais da Motocore.
+                    </p>
+                </div>
+
+                <div class="admin-tag">
+                    <span>✓</span>
+                    Acesso administrativo
+                </div>
+
+            </section>
 
             <?php if ($mensagem !== ''): ?>
-                <div class="alert" role="status">
-                    <?= eEmpresa($mensagem) ?>
+                <div class="alert alert-sucesso" role="status">
+                    <span class="alert-icon">✓</span>
+                    <span><?= eEmpresa($mensagem) ?></span>
                 </div>
             <?php endif; ?>
 
             <?php if ($erro !== ''): ?>
-                <div class="alert error" role="alert">
-                    <?= eEmpresa($erro) ?>
+                <div class="alert alert-erro" role="alert">
+                    <span class="alert-icon">!</span>
+                    <span><?= eEmpresa($erro) ?></span>
                 </div>
             <?php endif; ?>
 
             <section class="stats" aria-label="Estatísticas das empresas">
-                <article class="stat">
-                    <span>Pedidos pendentes</span>
-                    <strong><?= number_format($totalPendentes, 0, ',', '.') ?></strong>
+
+                <article class="card">
+
+                    <div class="card-topo">
+                        <div class="card-label">Pedidos pendentes</div>
+                        <div class="card-icon pendente-icon">◷</div>
+                    </div>
+
+                    <div class="number">
+                        <?= number_format($totalPendentes, 0, ',', '.') ?>
+                    </div>
+
+                    <small>A aguardar aprovação administrativa</small>
+
                 </article>
 
-                <article class="stat">
-                    <span>Stands aprovados</span>
-                    <strong><?= number_format($totalAprovados, 0, ',', '.') ?></strong>
+                <article class="card">
+
+                    <div class="card-topo">
+                        <div class="card-label">Stands aprovados</div>
+                        <div class="card-icon">▤</div>
+                    </div>
+
+                    <div class="number">
+                        <?= number_format($totalAprovados, 0, ',', '.') ?>
+                    </div>
+
+                    <small>Contas profissionais ativas</small>
+
                 </article>
 
-                <article class="stat">
-                    <span>Stands suspensos</span>
-                    <strong><?= number_format($totalSuspensos, 0, ',', '.') ?></strong>
+                <article class="card">
+
+                    <div class="card-topo">
+                        <div class="card-label">Stands suspensos</div>
+                        <div class="card-icon suspenso-icon">⚑</div>
+                    </div>
+
+                    <div class="number">
+                        <?= number_format($totalSuspensos, 0, ',', '.') ?>
+                    </div>
+
+                    <small>Contas com acesso suspenso</small>
+
                 </article>
+
             </section>
 
             <section class="panel">
-                <h2>Pesquisar empresas</h2>
 
-                <form class="filters" method="get" action="empresas.php">
-                    <input
-                        type="search"
-                        name="q"
-                        value="<?= eEmpresa($pesquisa) ?>"
-                        placeholder="Nome, stand, email ou username"
-                        aria-label="Pesquisar empresas"
-                    >
+                <div class="section-header">
+                    <div>
+                        <h2 class="section-title">Pesquisar empresas</h2>
+                        <p class="section-subtitle">
+                            Pesquisa por nome, stand, email ou username
+                            e filtra os resultados por estado.
+                        </p>
+                    </div>
+                </div>
 
-                    <select name="estado" aria-label="Filtrar por estado">
-                        <option value="">Todos os estados</option>
-                        <option value="pendente" <?= $filtro === 'pendente' ? 'selected' : '' ?>>
-                            Pendentes
-                        </option>
-                        <option value="ativo" <?= $filtro === 'ativo' ? 'selected' : '' ?>>
-                            Aprovados
-                        </option>
-                        <option value="suspenso" <?= $filtro === 'suspenso' ? 'selected' : '' ?>>
-                            Suspensos
-                        </option>
-                    </select>
+                <form class="filtros" method="get" action="empresas.php">
 
-                    <button class="primary" type="submit">Pesquisar</button>
+                    <div class="campo">
+                        <label for="q">Pesquisa</label>
+
+                        <input
+                            type="search"
+                            id="q"
+                            name="q"
+                            value="<?= eEmpresa($pesquisa) ?>"
+                            placeholder="Nome, stand, email ou username"
+                        >
+                    </div>
+
+                    <div class="campo">
+                        <label for="estado">Estado da empresa</label>
+
+                        <select id="estado" name="estado">
+                            <option value="">Todos os estados</option>
+
+                            <option
+                                value="pendente"
+                                <?= $filtro === 'pendente' ? 'selected' : '' ?>
+                            >
+                                Pendentes
+                            </option>
+
+                            <option
+                                value="ativo"
+                                <?= $filtro === 'ativo' ? 'selected' : '' ?>
+                            >
+                                Aprovados
+                            </option>
+
+                            <option
+                                value="suspenso"
+                                <?= $filtro === 'suspenso' ? 'selected' : '' ?>
+                            >
+                                Suspensos
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="filtros-botoes">
+
+                        <button type="submit">
+                            <span>⌕</span>
+                            Pesquisar
+                        </button>
+
+                        <?php if ($pesquisa !== '' || $filtro !== ''): ?>
+                            <a class="btn btn-secundario" href="empresas.php">
+                                Limpar filtros
+                            </a>
+                        <?php endif; ?>
+
+                    </div>
+
                 </form>
+
             </section>
 
             <section class="panel">
-                <h2>Empresas registadas</h2>
-                <p class="subtitle" style="margin-bottom:18px">
+
+                <div class="section-header">
+
+                    <div>
+                        <h2 class="section-title">Empresas registadas</h2>
+
+                        <p class="section-subtitle">
+                            Consulta os dados e gere os pedidos de registo
+                            e as contas profissionais.
+                        </p>
+                    </div>
+
+                    <span class="badge">
+                        <?= number_format(count($empresas), 0, ',', '.') ?>
+                        resultados
+                    </span>
+
+                </div>
+
+                <p class="section-subtitle" style="margin-bottom: 18px">
                     São apresentadas até 200 empresas por pesquisa.
                 </p>
 
                 <?php if (!$empresas): ?>
-                    <div class="empty">
-                        Não foram encontradas empresas com estes critérios.
+
+                    <div class="vazio">
+
+                        <div class="vazio-icon">⌕</div>
+
+                        <strong>Não foram encontradas empresas</strong>
+
+                        <p>
+                            Não existem resultados para os critérios selecionados.
+                            Experimenta alterar a pesquisa ou os filtros.
+                        </p>
+
+                        <?php if ($pesquisa !== '' || $filtro !== ''): ?>
+                            <a class="btn btn-secundario" href="empresas.php">
+                                Limpar filtros
+                            </a>
+                        <?php endif; ?>
+
                     </div>
+
                 <?php else: ?>
+
                     <div class="table-wrap">
+
                         <table>
                             <thead>
                                 <tr>
@@ -964,7 +1551,9 @@ footer {
                             </thead>
 
                             <tbody>
+
                                 <?php foreach ($empresas as $empresa): ?>
+
                                     <?php
                                     $estado = (string) $empresa['estado'];
 
@@ -983,80 +1572,202 @@ footer {
                                     if ($nomeEmpresa === '') {
                                         $nomeEmpresa = (string) $empresa['nome'];
                                     }
+
+                                    $dataRegisto = strtotime(
+                                        (string) $empresa['criado_em']
+                                    );
                                     ?>
+
                                     <tr>
+
                                         <td>
-                                            <strong><?= eEmpresa($nomeEmpresa) ?></strong>
-                                            <div class="muted">
-                                                <?= eEmpresa((string) ($empresa['username'] ?? 'Sem username')) ?>
-                                            </div>
-                                            <div class="muted">
+                                            <strong>
+                                                <?= eEmpresa($nomeEmpresa) ?>
+                                            </strong>
+
+                                            <span class="muted">
+                                                @<?= eEmpresa(
+                                                    (string) (
+                                                        $empresa['username']
+                                                        ?? 'Sem username'
+                                                    )
+                                                ) ?>
+                                            </span>
+
+                                            <span class="muted">
                                                 ID #<?= (int) $empresa['id'] ?>
-                                            </div>
-                                        </td>
-
-                                        <td>
-                                            <?= eEmpresa((string) ($empresa['email'] ?? 'Sem email')) ?>
-                                            <div class="muted">
-                                                <?= eEmpresa((string) ($empresa['telefone'] ?? 'Sem telefone')) ?>
-                                            </div>
-                                        </td>
-
-                                        <td>
-                                            <?= eEmpresa((string) ($empresa['localidade'] ?? '—')) ?>
-                                            <div class="muted">
-                                                <?= eEmpresa((string) ($empresa['distrito'] ?? '')) ?>
-                                            </div>
-                                        </td>
-
-                                        <td>
-                                            <?php if ($pendente): ?>
-                                                <span class="badge pendente">Pendente</span>
-                                            <?php elseif ($aprovado): ?>
-                                                <span class="badge ativo">Aprovado</span>
-                                            <?php else: ?>
-                                                <span class="badge suspenso">
-                                                    <?= $estado === 'suspenso' ? 'Suspenso' : eEmpresa($estado) ?>
-                                                </span>
-                                            <?php endif; ?>
+                                            </span>
                                         </td>
 
                                         <td>
                                             <?= eEmpresa(
-                                                date(
-                                                    'd/m/Y',
-                                                    strtotime((string) $empresa['criado_em'])
+                                                (string) (
+                                                    $empresa['email']
+                                                    ?? 'Sem email'
                                                 )
                                             ) ?>
+
+                                            <span class="muted">
+                                                <?= eEmpresa(
+                                                    (string) (
+                                                        $empresa['telefone']
+                                                        ?? 'Sem telefone'
+                                                    )
+                                                ) ?>
+                                            </span>
                                         </td>
 
                                         <td>
-                                            <div class="actions">
+                                            <?= eEmpresa(
+                                                (string) (
+                                                    $empresa['localidade']
+                                                    ?? '—'
+                                                )
+                                            ) ?>
+
+                                            <span class="muted">
+                                                <?= eEmpresa(
+                                                    (string) (
+                                                        $empresa['distrito']
+                                                        ?? ''
+                                                    )
+                                                ) ?>
+                                            </span>
+                                        </td>
+
+                                        <td>
+
+                                            <?php if ($pendente): ?>
+
+                                                <span class="badge badge-pendente">
+                                                    Pendente
+                                                </span>
+
+                                            <?php elseif ($aprovado): ?>
+
+                                                <span class="badge badge-ativo">
+                                                    Aprovado
+                                                </span>
+
+                                            <?php elseif ($estado === 'suspenso'): ?>
+
+                                                <span class="badge badge-suspenso">
+                                                    Suspenso
+                                                </span>
+
+                                            <?php else: ?>
+
+                                                <span class="badge">
+                                                    <?= eEmpresa($estado) ?>
+                                                </span>
+
+                                            <?php endif; ?>
+
+                                        </td>
+
+                                        <td>
+                                            <?= $dataRegisto !== false
+                                                ? date('d/m/Y', $dataRegisto)
+                                                : '—'
+                                            ?>
+                                        </td>
+
+                                        <td>
+
+                                            <div class="acoes">
+
                                                 <?php if ($pendente): ?>
-                                                    <form method="post" action="empresas.php">
-                                                        <input type="hidden" name="csrf_token" value="<?= eEmpresa(tokenCsrf()) ?>">
-                                                        <input type="hidden" name="utilizador_id" value="<?= (int) $empresa['id'] ?>">
-                                                        <input type="hidden" name="acao" value="aprovar">
-                                                        <button class="success" type="submit">
-                                                            Aprovar
+
+                                                    <form
+                                                        method="post"
+                                                        action="empresas.php"
+                                                    >
+                                                        <input
+                                                            type="hidden"
+                                                            name="csrf_token"
+                                                            value="<?= eEmpresa(tokenCsrf()) ?>"
+                                                        >
+
+                                                        <input
+                                                            type="hidden"
+                                                            name="utilizador_id"
+                                                            value="<?= (int) $empresa['id'] ?>"
+                                                        >
+
+                                                        <input
+                                                            type="hidden"
+                                                            name="acao"
+                                                            value="aprovar"
+                                                        >
+
+                                                        <button
+                                                            class="btn-sucesso"
+                                                            type="submit"
+                                                        >
+                                                            ✓ Aprovar
                                                         </button>
                                                     </form>
 
-                                                    <form method="post" action="empresas.php" onsubmit="return confirm('Tens a certeza de que queres rejeitar este pedido?');">
-                                                        <input type="hidden" name="csrf_token" value="<?= eEmpresa(tokenCsrf()) ?>">
-                                                        <input type="hidden" name="utilizador_id" value="<?= (int) $empresa['id'] ?>">
-                                                        <input type="hidden" name="acao" value="rejeitar">
-                                                        <button class="danger" type="submit">
-                                                            Rejeitar
+                                                    <form
+                                                        method="post"
+                                                        action="empresas.php"
+                                                        onsubmit="return confirm('Tens a certeza de que queres rejeitar este pedido?');"
+                                                    >
+                                                        <input
+                                                            type="hidden"
+                                                            name="csrf_token"
+                                                            value="<?= eEmpresa(tokenCsrf()) ?>"
+                                                        >
+
+                                                        <input
+                                                            type="hidden"
+                                                            name="utilizador_id"
+                                                            value="<?= (int) $empresa['id'] ?>"
+                                                        >
+
+                                                        <input
+                                                            type="hidden"
+                                                            name="acao"
+                                                            value="rejeitar"
+                                                        >
+
+                                                        <button
+                                                            class="btn-perigo"
+                                                            type="submit"
+                                                        >
+                                                            ✕ Rejeitar
                                                         </button>
                                                     </form>
 
                                                 <?php elseif ($aprovado): ?>
-                                                    <form method="post" action="empresas.php" onsubmit="return confirm('Queres suspender este stand?');">
-                                                        <input type="hidden" name="csrf_token" value="<?= eEmpresa(tokenCsrf()) ?>">
-                                                        <input type="hidden" name="utilizador_id" value="<?= (int) $empresa['id'] ?>">
-                                                        <input type="hidden" name="acao" value="suspender">
-                                                        <button class="danger" type="submit">
+
+                                                    <form
+                                                        method="post"
+                                                        action="empresas.php"
+                                                        onsubmit="return confirm('Queres suspender este stand?');"
+                                                    >
+                                                        <input
+                                                            type="hidden"
+                                                            name="csrf_token"
+                                                            value="<?= eEmpresa(tokenCsrf()) ?>"
+                                                        >
+
+                                                        <input
+                                                            type="hidden"
+                                                            name="utilizador_id"
+                                                            value="<?= (int) $empresa['id'] ?>"
+                                                        >
+
+                                                        <input
+                                                            type="hidden"
+                                                            name="acao"
+                                                            value="suspender"
+                                                        >
+
+                                                        <button
+                                                            class="btn-perigo"
+                                                            type="submit"
+                                                        >
                                                             Suspender
                                                         </button>
                                                     </form>
@@ -1065,32 +1776,72 @@ footer {
                                                     $estado === 'suspenso'
                                                     && (int) $empresa['stand_aprovado'] === 1
                                                 ): ?>
-                                                    <form method="post" action="empresas.php" onsubmit="return confirm('Queres reativar este stand?');">
-                                                        <input type="hidden" name="csrf_token" value="<?= eEmpresa(tokenCsrf()) ?>">
-                                                        <input type="hidden" name="utilizador_id" value="<?= (int) $empresa['id'] ?>">
-                                                        <input type="hidden" name="acao" value="reativar">
-                                                        <button class="success" type="submit">
-                                                            Reativar
+
+                                                    <form
+                                                        method="post"
+                                                        action="empresas.php"
+                                                        onsubmit="return confirm('Queres reativar este stand?');"
+                                                    >
+                                                        <input
+                                                            type="hidden"
+                                                            name="csrf_token"
+                                                            value="<?= eEmpresa(tokenCsrf()) ?>"
+                                                        >
+
+                                                        <input
+                                                            type="hidden"
+                                                            name="utilizador_id"
+                                                            value="<?= (int) $empresa['id'] ?>"
+                                                        >
+
+                                                        <input
+                                                            type="hidden"
+                                                            name="acao"
+                                                            value="reativar"
+                                                        >
+
+                                                        <button
+                                                            class="btn-sucesso"
+                                                            type="submit"
+                                                        >
+                                                            ↻ Reativar
                                                         </button>
                                                     </form>
+
                                                 <?php else: ?>
-                                                    <span class="muted">Sem ações disponíveis</span>
+
+                                                    <span class="muted">
+                                                        Sem ações disponíveis
+                                                    </span>
+
                                                 <?php endif; ?>
+
                                             </div>
+
                                         </td>
+
                                     </tr>
+
                                 <?php endforeach; ?>
+
                             </tbody>
                         </table>
+
                     </div>
+
                 <?php endif; ?>
+
             </section>
 
-            <footer class="muted" style="text-align:center;padding:20px">
+            <footer>
                 Motocore · Painel de administração
             </footer>
+
         </div>
+
     </main>
+
 </div>
+
 </body>
 </html>
