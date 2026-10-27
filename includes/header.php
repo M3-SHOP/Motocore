@@ -6,15 +6,39 @@ $tituloPagina = $tituloPagina ?? 'MotoCore';
 ?>
 <!DOCTYPE html>
 <html lang="pt-PT">
+
+
+<script>
+if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+        navigator.serviceWorker.register("/service-worker.js")
+            .catch((error) => {
+                console.error("Erro ao registar a PWA:", error);
+            });
+    });
+}
+</script>
+
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description"
           content="Compra e vende motas em Portugal no MotoCore.">
 
+    <meta name="theme-color" content="#111827">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="MotoCore">
+
     <title><?= e($tituloPagina) ?> | MotoCore</title>
+
     <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/assets/images/icon-192.png">
 </head>
+
 <body>
 
 <header class="topo">
